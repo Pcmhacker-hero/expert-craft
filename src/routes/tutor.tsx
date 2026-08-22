@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
 import type { UIMessage } from "ai";
-import { Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,28 +11,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChatPanel } from "@/components/tutor/chat-panel";
-import type { Citation } from "@/components/tutor/message-view";
 import { SiteHeader } from "@/components/site-header";
-import {
-  createConversation,
-  deleteConversation,
-  getConversation,
-  getProfile,
-  listConversations,
-  updateProfile,
-} from "@/lib/tutor.functions";
+import { useLocalConversations } from "@/hooks/use-local-conversations";
 
 const GRADES = ["middle school", "high school", "undergraduate"];
 const LANGUAGES = ["English", "Hindi", "Marathi", "Tamil", "Bengali", "Spanish", "French", "Swahili"];
 
-export const Route = createFileRoute("/_authenticated/tutor")({
+export const Route = createFileRoute("/tutor")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Your AI tutor — Aarambh" },
       {
         name: "description",
         content:
-          "Ask any study doubt and get a step-by-step explanation at your level, in your language, cited from open textbooks.",
+          "Ask any study doubt and get a step-by-step explanation at your level, in your language, cited from open textbooks. No sign-up needed.",
       },
       { property: "og:title", content: "Your AI tutor — Aarambh" },
       {
@@ -50,77 +40,27 @@ export const Route = createFileRoute("/_authenticated/tutor")({
 });
 
 function TutorPage() {
-  const queryClient = useQueryClient();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const {
+    hydrated,
+    conversations,
+    activeId,
+    setActiveId,
+    prefs,
+    updatePrefs,
+    createConversation,
+    deleteConversation,
+    saveMessages,
+  } = useLocalConversations();
 
-  const fetchConversations = useServerFn(listConversations);
-  const fetchMessages = useServerFn(getConversation);
-  const fetchProfile = useServerFn(getProfile);
-  const saveProfile = useServerFn(updateProfile);
-  const newConversation = useServerFn(createConversation);
-  const removeConversation = useServerFn(deleteConversation);
-
-  const conversations = useQuery({
-    queryKey: ["conversations"],
-    queryFn: () => fetchConversations(),
-  });
-
-  const profile = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
-
-  const messages = useQuery({
-    queryKey: ["messages", activeId],
-    enabled: Boolean(activeId),
-    queryFn: () => fetchMessages({ data: { id: activeId! } }),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: () => newConversation(),
-    onSuccess: (conversation) => {
-      setActiveId(conversation.id);
-      void queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => removeConversation({ data: { id } }),
-    onSuccess: (_result, id) => {
-      if (activeId === id) setActiveId(null);
-      void queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    },
-  });
-
-  const profileMutation = useMutation({
-    mutationFn: (input: { grade_level?: string; preferred_language?: string }) =>
-      saveProfile({ data: input }),
-    onSuccess: (row) => queryClient.setQueryData(["profile"], row),
-  });
-
-  useEffect(() => {
-    if (!activeId && conversations.data && conversations.data.length > 0) {
-      setActiveId(conversations.data[0]!.id);
-    }
-  }, [activeId, conversations.data]);
-
-  const initialMessages: UIMessage[] = (messages.data ?? []).map((row) => ({
-    id: row.id,
-    role: row.role === "user" ? "user" : "assistant",
-    parts: [{ type: "text", text: row.content }],
-    metadata: { citations: (row.citations ?? []) as unknown as Citation[] },
-  }));
-
-  const gradeLevel = profile.data?.grade_level ?? "high school";
-  const language = profile.data?.preferred_language ?? "English";
+  const active = conversations.find((item) => item.id === activeId) ?? null;
+  const initialMessages: UIMessage[] = active?.messages ?? [];
 
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <div className="mx-auto flex w-full max-w-6xl flex-1 gap-0 px-0 sm:px-5">
         <aside className="hidden w-72 shrink-0 flex-col border-r border-border py-6 pr-5 lg:flex">
-          <Button
-            className="w-full justify-start"
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending}
-          >
+          <Button className="w-full justify-start" onClick={() => createConversation()}>
             <Plus className="size-4" /> New doubt
           </Button>
 
@@ -129,7 +69,7 @@ function TutorPage() {
               Recent
             </p>
             <ul className="mt-2 space-y-1">
-              {conversations.data?.map((conversation) => (
+              {conversations.map((conversation) => (
                 <li key={conversation.id} className="group flex items-center gap-1">
                   <button
                     type="button"
@@ -145,17 +85,14 @@ function TutorPage() {
                   <button
                     type="button"
                     aria-label="Delete conversation"
-                    onClick={() => deleteMutation.mutate(conversation.id)}
+                    onClick={() => deleteConversation(conversation.id)}
                     className="rounded-md p-2 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                   >
                     <Trash2 className="size-3.5" />
                   </button>
                 </li>
               ))}
-              {conversations.isLoading ? (
-                <li className="px-3 py-2 text-sm text-muted-foreground">Loading…</li>
-              ) : null}
-              {conversations.data?.length === 0 ? (
+              {hydrated && conversations.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-muted-foreground">No doubts yet.</li>
               ) : null}
             </ul>
@@ -166,8 +103,8 @@ function TutorPage() {
               Explain to me as
             </p>
             <Select
-              value={gradeLevel}
-              onValueChange={(value) => profileMutation.mutate({ grade_level: value })}
+              value={prefs.gradeLevel}
+              onValueChange={(value) => updatePrefs({ gradeLevel: value })}
             >
               <SelectTrigger className="bg-card">
                 <SelectValue />
@@ -181,8 +118,8 @@ function TutorPage() {
               </SelectContent>
             </Select>
             <Select
-              value={language}
-              onValueChange={(value) => profileMutation.mutate({ preferred_language: value })}
+              value={prefs.language}
+              onValueChange={(value) => updatePrefs({ language: value })}
             >
               <SelectTrigger className="bg-card">
                 <SelectValue />
@@ -201,20 +138,23 @@ function TutorPage() {
             >
               Browse the open library
             </Link>
+            <p className="text-xs text-muted-foreground">
+              Your doubts stay on this device — nothing is stored on a server.
+            </p>
           </div>
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-center gap-2 border-b border-border px-5 py-3 lg:hidden">
-            <Button size="sm" onClick={() => createMutation.mutate()}>
+            <Button size="sm" onClick={() => createConversation()}>
               <Plus className="size-4" /> New doubt
             </Button>
             <span className="truncate text-sm text-muted-foreground">
-              {conversations.data?.find((item) => item.id === activeId)?.title ?? "Ask anything"}
+              {active?.title ?? "Ask anything"}
             </span>
           </div>
 
-          {!activeId ? (
+          {!active ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-20 text-center">
               <Sparkles className="size-6 text-accent" />
               <h1 className="text-2xl">Start your first doubt</h1>
@@ -222,26 +162,17 @@ function TutorPage() {
                 Ask about anything in maths, physics, chemistry or biology. Every explanation cites the
                 open textbook passage it came from.
               </p>
-              <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
-                {createMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-                Start asking
-              </Button>
-            </div>
-          ) : messages.isLoading ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-              <Loader2 className="mr-2 size-4 animate-spin" /> Loading conversation…
+              <Button onClick={() => createConversation()}>Start asking</Button>
             </div>
           ) : (
             <div className="min-h-0 flex-1">
               <ChatPanel
-                key={activeId}
-                conversationId={activeId}
+                key={active.id}
+                conversationId={active.id}
                 initialMessages={initialMessages}
-                gradeLevel={gradeLevel}
-                language={language}
-                onExchange={() => {
-                  void queryClient.invalidateQueries({ queryKey: ["conversations"] });
-                }}
+                gradeLevel={prefs.gradeLevel}
+                language={prefs.language}
+                onExchange={(messages) => saveMessages(active.id, messages)}
               />
             </div>
           )}

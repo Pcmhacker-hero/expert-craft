@@ -270,7 +270,7 @@ function Landing() {
               </p>
             </div>
             <Button asChild size="lg" className="h-12 px-8 text-base lift-3d">
-              <Link to="/auth">Get started</Link>
+              <Link to="/tutor">Get started</Link>
             </Button>
           </div>
         </section>

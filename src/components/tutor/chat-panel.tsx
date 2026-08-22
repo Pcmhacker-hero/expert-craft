@@ -6,7 +6,6 @@ import { ArrowUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageView, type Citation } from "@/components/tutor/message-view";
-import { supabase } from "@/integrations/supabase/client";
 
 const STARTERS = [
   "I don't get why F = ma has mass in the denominator for acceleration.",
@@ -33,7 +32,7 @@ export function ChatPanel({
   initialMessages: UIMessage[];
   gradeLevel: string;
   language: string;
-  onExchange: () => void;
+  onExchange: (messages: UIMessage[]) => void;
 }) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -42,16 +41,10 @@ export function ChatPanel({
     () =>
       new DefaultChatTransport<UIMessage>({
         api: "/api/chat",
-        prepareSendMessagesRequest: async ({ messages }) => {
-          const { data } = await supabase.auth.getSession();
-          return {
-            headers: {
-              "content-type": "application/json",
-              Authorization: `Bearer ${data.session?.access_token ?? ""}`,
-            },
-            body: { messages, conversationId, gradeLevel, language },
-          };
-        },
+        prepareSendMessagesRequest: ({ messages }) => ({
+          headers: { "content-type": "application/json" },
+          body: { messages, conversationId, gradeLevel, language },
+        }),
       }),
     [conversationId, gradeLevel, language],
   );
@@ -60,8 +53,9 @@ export function ChatPanel({
     id: conversationId,
     messages: initialMessages,
     transport,
-    onFinish: () => onExchange(),
+    onFinish: ({ messages: finalMessages }) => onExchange(finalMessages),
   });
+
 
   const busy = status === "submitted" || status === "streaming";
 
