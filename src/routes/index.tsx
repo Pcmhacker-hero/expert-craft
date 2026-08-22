@@ -13,6 +13,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { Reveal } from "@/components/reveal";
 import heroImage from "@/assets/hero-tutor.jpg";
 
 export const Route = createFileRoute("/")({
@@ -179,9 +180,11 @@ function Landing() {
         {/* PILLARS */}
         <section className="border-y border-border bg-surface/50">
           <div className="scene-3d mx-auto grid w-full max-w-7xl gap-8 px-6 py-24 sm:grid-cols-3">
-            {PILLARS.map((pillar) => (
-              <div
+            {PILLARS.map((pillar, i) => (
+              <Reveal
                 key={pillar.title}
+                delay={i * 120}
+                variant="up"
                 className="lift-3d rounded-2xl border border-border bg-card/70 p-7 backdrop-blur"
               >
                 <span className="inline-flex size-11 items-center justify-center rounded-xl bg-accent/15 text-accent">
@@ -189,32 +192,34 @@ function Landing() {
                 </span>
                 <h2 className="mt-5 text-2xl leading-snug">{pillar.title}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{pillar.body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         {/* CAPABILITIES */}
         <section className="mx-auto w-full max-w-7xl px-6 py-24">
-          <div className="max-w-2xl">
+          <Reveal className="max-w-2xl" variant="left">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               Built for classrooms that are short on time
             </p>
             <h2 className="mt-4 text-4xl leading-tight sm:text-5xl">
               Everything a student needs, nothing they have to pay for.
             </h2>
-          </div>
+          </Reveal>
 
           <div className="scene-3d mt-14 grid gap-6 sm:grid-cols-2">
-            {CAPABILITIES.map((item) => (
-              <div
+            {CAPABILITIES.map((item, i) => (
+              <Reveal
                 key={item.title}
+                delay={i * 110}
+                variant={i % 2 === 0 ? "left" : "right"}
                 className="lift-3d rounded-2xl border border-border bg-card p-8"
               >
                 <item.icon className="size-6 text-highlight" />
                 <h3 className="mt-5 text-xl leading-snug">{item.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -222,7 +227,9 @@ function Landing() {
         {/* HOW IT WORKS */}
         <section className="border-t border-border bg-surface/40">
           <div className="mx-auto w-full max-w-7xl px-6 py-24">
-            <h2 className="text-4xl sm:text-5xl">How a doubt gets answered</h2>
+            <Reveal variant="up">
+              <h2 className="text-4xl sm:text-5xl">How a doubt gets answered</h2>
+            </Reveal>
             <ol className="scene-3d mt-12 grid gap-6 sm:grid-cols-3">
               {[
                 {
@@ -240,12 +247,18 @@ function Landing() {
                   title: "It explains, with citations",
                   body: "A worked, step-by-step explanation, each claim traceable to a numbered source.",
                 },
-              ].map((item) => (
-                <li key={item.step} className="lift-3d rounded-2xl border border-border bg-card p-8">
+              ].map((item, i) => (
+                <Reveal
+                  as="li"
+                  key={item.step}
+                  delay={i * 140}
+                  variant="zoom"
+                  className="lift-3d rounded-2xl border border-border bg-card p-8"
+                >
                   <span className="font-mono text-xs text-highlight">{item.step}</span>
                   <h3 className="mt-4 text-xl leading-snug">{item.title}</h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-                </li>
+                </Reveal>
               ))}
             </ol>
           </div>
@@ -260,7 +273,10 @@ function Landing() {
               style={{ animationDelay: "-9s" }}
             />
           </div>
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-start gap-8 px-6 py-24 sm:flex-row sm:items-center sm:justify-between">
+          <Reveal
+            variant="zoom"
+            className="mx-auto flex w-full max-w-7xl flex-col items-start gap-8 px-6 py-24 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
               <h2 className="text-3xl sm:text-4xl">
                 Free tutoring shouldn't depend on the postcode.
@@ -272,7 +288,7 @@ function Landing() {
             <Button asChild size="lg" className="h-12 px-8 text-base lift-3d">
               <Link to="/tutor">Get started</Link>
             </Button>
-          </div>
+          </Reveal>
         </section>
       </main>
 
