@@ -155,7 +155,7 @@ function AuthPage() {
           {isSignup ? "Already have an account? " : "New here? "}
           <Link
             to="/auth"
-            search={{ mode: isSignup ? "signin" : "signup" }}
+            search={isSignup ? {} : { mode: "signup" as const }}
             className="font-medium text-foreground underline underline-offset-4"
           >
             {isSignup ? "Sign in" : "Create one"}
