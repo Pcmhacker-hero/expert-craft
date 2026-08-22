@@ -3,11 +3,9 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { createLovableAiGatewayProvider, TUTOR_MODEL } from "@/lib/ai-gateway.server";
 import { buildGroundingBlock, retrieveSources } from "@/lib/retrieval.server";
-import { authenticateRequest } from "@/lib/request-auth.server";
 
 type ChatBody = {
   messages: UIMessage[];
-  conversationId: string;
   gradeLevel?: string;
   language?: string;
 };
@@ -32,56 +30,19 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = await authenticateRequest(request);
-        if (!auth) return json({ error: "Please sign in to use the tutor." }, 401);
-
         const apiKey = process.env["LOVABLE_API_KEY"];
         if (!apiKey) return json({ error: "AI is not configured for this app." }, 500);
 
         const body = (await request.json()) as ChatBody;
-        const { messages, conversationId } = body;
-        if (!conversationId || !Array.isArray(messages) || messages.length === 0) {
+        const { messages } = body;
+        if (!Array.isArray(messages) || messages.length === 0) {
           return json({ error: "Invalid request." }, 400);
-        }
-
-        const { supabase, userId } = auth;
-
-        const { data: conversation, error: conversationError } = await supabase
-          .from("conversations")
-          .select("id, title")
-          .eq("id", conversationId)
-          .maybeSingle();
-
-        if (conversationError || !conversation) {
-          return json({ error: "Conversation not found." }, 404);
         }
 
         const question = textOf(messages[messages.length - 1]);
         if (!question) return json({ error: "Empty question." }, 400);
 
         const sources = await retrieveSources(question);
-
-        await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          user_id: userId,
-          role: "user",
-          content: question,
-        });
-
-        if (conversation.title === "New doubt") {
-          await supabase
-            .from("conversations")
-            .update({
-              title: question.length > 60 ? `${question.slice(0, 57)}...` : question,
-              subject: sources[0]?.subject ?? null,
-            })
-            .eq("id", conversationId);
-        } else {
-          await supabase
-            .from("conversations")
-            .update({ updated_at: new Date().toISOString() })
-            .eq("id", conversationId);
-        }
 
         const gradeLevel = body.gradeLevel || "high school";
         const language = body.language || "English";
@@ -115,21 +76,6 @@ export const Route = createFileRoute("/api/chat")({
             system,
             messages: await convertToModelMessages(messages),
             providerOptions: { lovable: { reasoning_effort: "none" } },
-            onFinish: async ({ text }) => {
-              await supabase.from("messages").insert({
-                conversation_id: conversationId,
-                user_id: userId,
-                role: "assistant",
-                content: text,
-                citations: sources.map((source, index) => ({
-                  index: index + 1,
-                  title: source.title,
-                  source_name: source.source_name,
-                  source_url: source.source_url,
-                  license: source.license,
-                })),
-              });
-            },
           });
 
           return result.toUIMessageStreamResponse({
