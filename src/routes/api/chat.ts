@@ -1,0 +1,164 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
+
+import { createLovableAiGatewayProvider, TUTOR_MODEL } from "@/lib/ai-gateway.server";
+import { buildGroundingBlock, retrieveSources } from "@/lib/retrieval.server";
+import { authenticateRequest } from "@/lib/request-auth.server";
+
+type ChatBody = {
+  messages: UIMessage[];
+  conversationId: string;
+  gradeLevel?: string;
+  language?: string;
+};
+
+function textOf(message: UIMessage | undefined) {
+  if (!message) return "";
+  return (message.parts ?? [])
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+    .trim();
+}
+
+function json(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+export const Route = createFileRoute("/api/chat")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const auth = await authenticateRequest(request);
+        if (!auth) return json({ error: "Please sign in to use the tutor." }, 401);
+
+        const apiKey = process.env["LOVABLE_API_KEY"];
+        if (!apiKey) return json({ error: "AI is not configured for this app." }, 500);
+
+        const body = (await request.json()) as ChatBody;
+        const { messages, conversationId } = body;
+        if (!conversationId || !Array.isArray(messages) || messages.length === 0) {
+          return json({ error: "Invalid request." }, 400);
+        }
+
+        const { supabase, userId } = auth;
+
+        const { data: conversation, error: conversationError } = await supabase
+          .from("conversations")
+          .select("id, title")
+          .eq("id", conversationId)
+          .maybeSingle();
+
+        if (conversationError || !conversation) {
+          return json({ error: "Conversation not found." }, 404);
+        }
+
+        const question = textOf(messages[messages.length - 1]);
+        if (!question) return json({ error: "Empty question." }, 400);
+
+        const sources = await retrieveSources(question);
+
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          user_id: userId,
+          role: "user",
+          content: question,
+        });
+
+        if (conversation.title === "New doubt") {
+          await supabase
+            .from("conversations")
+            .update({
+              title: question.length > 60 ? `${question.slice(0, 57)}...` : question,
+              subject: sources[0]?.subject ?? null,
+            })
+            .eq("id", conversationId);
+        } else {
+          await supabase
+            .from("conversations")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", conversationId);
+        }
+
+        const gradeLevel = body.gradeLevel || "high school";
+        const language = body.language || "English";
+
+        const system = [
+          "You are Aarambh, a patient tutor for students who do not have access to private tutoring.",
+          `Explain at a ${gradeLevel} level, and write your entire answer in ${language} (keep technical terms and formulas in their standard form).`,
+          "",
+          "How to answer:",
+          "1. Restate the specific confusion in one short sentence.",
+          "2. Explain step by step, numbering the steps. Keep each step short and concrete.",
+          "3. Use a worked example or analogy when it helps.",
+          "4. End with a section titled 'Check yourself' containing one short practice question.",
+          "",
+          "Grounding rules:",
+          "- Prefer the retrieved open textbook passages below as your source of truth.",
+          "- When a statement comes from a passage, cite it inline like [1] or [2] using the numbers below.",
+          "- If the passages do not cover the question, say so plainly in one line, then answer from general knowledge WITHOUT inventing citations.",
+          "- Never invent a source, a formula, or a numeric result. Show the arithmetic you rely on.",
+          "- Be encouraging and never condescending. Do not just give the final answer for homework-style problems; walk through the reasoning.",
+          "",
+          "Retrieved open textbook passages:",
+          buildGroundingBlock(sources),
+        ].join("\n");
+
+        const gateway = createLovableAiGatewayProvider(apiKey);
+
+        try {
+          const result = streamText({
+            model: gateway(TUTOR_MODEL),
+            system,
+            messages: convertToModelMessages(messages),
+            providerOptions: { lovable: { reasoning_effort: "none" } },
+            onFinish: async ({ text }) => {
+              await supabase.from("messages").insert({
+                conversation_id: conversationId,
+                user_id: userId,
+                role: "assistant",
+                content: text,
+                citations: sources.map((source, index) => ({
+                  index: index + 1,
+                  title: source.title,
+                  source_name: source.source_name,
+                  source_url: source.source_url,
+                  license: source.license,
+                })),
+              });
+            },
+          });
+
+          return result.toUIMessageStreamResponse({
+            messageMetadata: () => ({
+              citations: sources.map((source, index) => ({
+                index: index + 1,
+                title: source.title,
+                source_name: source.source_name,
+                source_url: source.source_url,
+                license: source.license,
+              })),
+            }),
+            onError: (error) => {
+              console.error("[chat] stream error", error);
+              return "The tutor could not finish that explanation. Please try again.";
+            },
+          });
+        } catch (error) {
+          console.error("[chat] gateway error", error);
+          const status = (error as { statusCode?: number })?.statusCode;
+          if (status === 429) {
+            return json({ error: "Too many requests right now — please wait a moment." }, 429);
+          }
+          if (status === 402) {
+            return json({ error: "AI credits are exhausted for this workspace." }, 402);
+          }
+          return json({ error: "The tutor is unavailable right now." }, 500);
+        }
+      },
+    },
+  },
+});
