@@ -113,7 +113,7 @@ export const Route = createFileRoute("/api/chat")({
           const result = streamText({
             model: gateway(TUTOR_MODEL),
             system,
-            messages: convertToModelMessages(messages),
+            messages: await convertToModelMessages(messages),
             providerOptions: { lovable: { reasoning_effort: "none" } },
             onFinish: async ({ text }) => {
               await supabase.from("messages").insert({

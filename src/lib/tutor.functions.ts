@@ -83,7 +83,13 @@ export const updateProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("profiles")
-      .update(data)
+      .update({
+        ...(data.display_name === undefined ? {} : { display_name: data.display_name }),
+        ...(data.grade_level === undefined ? {} : { grade_level: data.grade_level }),
+        ...(data.preferred_language === undefined
+          ? {}
+          : { preferred_language: data.preferred_language }),
+      })
       .eq("id", context.userId)
       .select("id, display_name, grade_level, preferred_language")
       .single();
