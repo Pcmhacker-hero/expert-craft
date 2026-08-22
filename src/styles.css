@@ -261,6 +261,36 @@
   animation: spin-slow 26s linear infinite;
 }
 
+/* ---- Scroll-triggered 3D reveals ---- */
+.reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition:
+    opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1000ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 900ms ease;
+  filter: blur(6px);
+}
+
+.reveal-up {
+  transform: perspective(1400px) translate3d(0, 46px, -90px) rotateX(11deg);
+}
+.reveal-left {
+  transform: perspective(1400px) translate3d(-52px, 22px, -90px) rotateY(12deg);
+}
+.reveal-right {
+  transform: perspective(1400px) translate3d(52px, 22px, -90px) rotateY(-12deg);
+}
+.reveal-zoom {
+  transform: perspective(1400px) translate3d(0, 26px, -140px) scale(0.94);
+}
+
+.reveal.is-revealed {
+  opacity: 1;
+  filter: blur(0);
+  transform: perspective(1400px) translate3d(0, 0, 0) rotateX(0) rotateY(0) scale(1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-slow,
   .aurora,
@@ -269,7 +299,15 @@
   .rise-in {
     animation: none !important;
   }
+
+  .reveal {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
 }
+
 
 
 @utility prose-tutor {
