@@ -17,7 +17,7 @@ const STOPWORDS = new Set([
   "did","can","could","should","would","i","me","my","you","your","it","this","that","these","those",
   "of","in","on","for","to","and","or","but","with","about","please","explain","tell","help","understand",
   "solve","between","difference","concept","question","doubt","again","not","dont","don't","get","got",
-];
+]);
 
 function serverSupabase() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
