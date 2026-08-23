@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as TutorRouteImport } from './routes/tutor'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiPublicAiCheckRouteImport } from './routes/api/public/ai-check'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiCheckRoute = ApiPublicAiCheckRouteImport.update({
+  id: '/api/public/ai-check',
+  path: '/api/public/ai-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/library': typeof LibraryRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/ai-check': typeof ApiPublicAiCheckRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/library': typeof LibraryRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/ai-check': typeof ApiPublicAiCheckRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/ai-check': typeof ApiPublicAiCheckRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/library' | '/tutor' | '/api/chat'
+  fullPaths: '/' | '/library' | '/tutor' | '/api/chat' | '/api/public/ai-check'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/library' | '/tutor' | '/api/chat'
-  id: '__root__' | '/' | '/library' | '/tutor' | '/api/chat'
+  to: '/' | '/library' | '/tutor' | '/api/chat' | '/api/public/ai-check'
+  id:
+    | '__root__'
+    | '/'
+    | '/library'
+    | '/tutor'
+    | '/api/chat'
+    | '/api/public/ai-check'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   TutorRoute: typeof TutorRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicAiCheckRoute: typeof ApiPublicAiCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai-check': {
+      id: '/api/public/ai-check'
+      path: '/api/public/ai-check'
+      fullPath: '/api/public/ai-check'
+      preLoaderRoute: typeof ApiPublicAiCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   TutorRoute: TutorRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicAiCheckRoute: ApiPublicAiCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
