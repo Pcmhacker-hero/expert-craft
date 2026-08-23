@@ -31,8 +31,16 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return json({ error: "AI is not configured for this app." }, 500);
+        const aiConfig = getAiConfig();
+        if (!aiConfig) {
+          return json(
+            {
+              error:
+                "AI is not configured on this deployment. Set LOVABLE_API_KEY (or OPENAI_API_KEY) in your hosting environment variables and redeploy.",
+            },
+            500,
+          );
+        }
 
         const body = (await request.json()) as ChatBody;
         const { messages } = body;
