@@ -80,7 +80,7 @@ Set these environment variables in your host's project settings and redeploy:
 | --- | --- |
 | `GEMINI_API_KEY` | Google AI Studio key (https://aistudio.google.com/apikey). Used automatically when `LOVABLE_API_KEY` is absent |
 | `OPENAI_API_KEY` | Alternative AI provider, used if no Gemini key is set |
-| `AI_MODEL` | Optional model override (defaults to `gemini-2.5-flash` on Gemini, `gpt-4o-mini` on OpenAI) |
+| `AI_MODEL` | Optional model override (defaults to `gemini-3.6-flash` on Gemini, `gpt-4o-mini` on OpenAI) |
 | `SUPABASE_URL` / `VITE_SUPABASE_URL` | Open textbook library database URL |
 | `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | Public (anon) database key |
 

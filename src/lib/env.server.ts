@@ -45,7 +45,7 @@ export function getAiConfig(): AiConfig | null {
     return {
       kind: "gemini",
       apiKey: geminiKey,
-      model: pick("AI_MODEL") ?? "gemini-2.5-flash",
+      model: pick("AI_MODEL") ?? "gemini-3.6-flash",
     };
   }
 
