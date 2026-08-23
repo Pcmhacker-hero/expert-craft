@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 
 export const listLibrary = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
-  const url = process.env["SUPABASE_URL"]!;
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  const { getSupabaseServerEnv } = await import("./env.server");
+  const env = getSupabaseServerEnv();
+  if (!env) return [];
+  const { url, key } = env;
 
   const supabase = createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
