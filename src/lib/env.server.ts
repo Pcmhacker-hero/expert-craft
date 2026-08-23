@@ -26,6 +26,7 @@ export function getSupabaseServerEnv() {
 
 export type AiConfig =
   | { kind: "lovable"; apiKey: string; model: string }
+  | { kind: "gemini"; apiKey: string; model: string }
   | { kind: "openai"; apiKey: string; model: string };
 
 export function getAiConfig(): AiConfig | null {
@@ -35,6 +36,16 @@ export function getAiConfig(): AiConfig | null {
       kind: "lovable",
       apiKey: lovableKey,
       model: pick("AI_MODEL") ?? "openai/gpt-5.6-sol",
+    };
+  }
+
+  // Bring-your-own Google AI Studio key (https://aistudio.google.com/apikey)
+  const geminiKey = pick("GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY");
+  if (geminiKey) {
+    return {
+      kind: "gemini",
+      apiKey: geminiKey,
+      model: pick("AI_MODEL") ?? "gemini-2.5-flash",
     };
   }
 
@@ -49,3 +60,4 @@ export function getAiConfig(): AiConfig | null {
 
   return null;
 }
+

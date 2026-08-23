@@ -36,7 +36,8 @@ export const Route = createFileRoute("/api/chat")({
           return json(
             {
               error:
-                "AI is not configured on this deployment. Set LOVABLE_API_KEY (or OPENAI_API_KEY) in your hosting environment variables and redeploy.",
+                "AI is not configured on this deployment. Set GEMINI_API_KEY (or LOVABLE_API_KEY / OPENAI_API_KEY) in your hosting environment variables and redeploy.",
+
             },
             500,
           );
