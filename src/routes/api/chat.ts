@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
-import { createLovableAiGatewayProvider, TUTOR_MODEL } from "@/lib/ai-gateway.server";
+import { createTutorModel } from "@/lib/ai-gateway.server";
+import { getAiConfig } from "@/lib/env.server";
 import { buildGroundingBlock, retrieveSources } from "@/lib/retrieval.server";
 
 type ChatBody = {
