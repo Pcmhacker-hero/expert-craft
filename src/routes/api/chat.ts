@@ -102,8 +102,17 @@ export const Route = createFileRoute("/api/chat")({
             }),
             onError: (error) => {
               console.error("[chat] stream error", error);
-              return "The tutor could not finish that explanation. Please try again.";
+              const detail =
+                error instanceof Error
+                  ? error.message
+                  : typeof error === "string"
+                    ? error
+                    : JSON.stringify(error);
+              return `Tutor error (${aiConfig.kind}/${aiConfig.model}): ${
+                detail || "unknown error"
+              }`;
             },
+
           });
         } catch (error) {
           console.error("[chat] gateway error", error);
