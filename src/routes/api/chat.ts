@@ -87,7 +87,10 @@ export const Route = createFileRoute("/api/chat")({
             messages: await convertToModelMessages(messages),
             ...(aiConfig.kind === "lovable"
               ? { providerOptions: { lovable: { reasoning_effort: "none" } } }
-              : {}),
+              : aiConfig.kind === "gemini"
+                ? { providerOptions: { gemini: { reasoning_effort: "none" } } }
+                : {}),
+
           });
 
           return result.toUIMessageStreamResponse({
