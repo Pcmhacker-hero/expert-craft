@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
-import { createLovableAiGatewayProvider, TUTOR_MODEL } from "@/lib/ai-gateway.server";
+import { createTutorModel } from "@/lib/ai-gateway.server";
+import { getAiConfig } from "@/lib/env.server";
 import { buildGroundingBlock, retrieveSources } from "@/lib/retrieval.server";
 
 type ChatBody = {
@@ -30,8 +31,16 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return json({ error: "AI is not configured for this app." }, 500);
+        const aiConfig = getAiConfig();
+        if (!aiConfig) {
+          return json(
+            {
+              error:
+                "AI is not configured on this deployment. Set LOVABLE_API_KEY (or OPENAI_API_KEY) in your hosting environment variables and redeploy.",
+            },
+            500,
+          );
+        }
 
         const body = (await request.json()) as ChatBody;
         const { messages } = body;
@@ -68,14 +77,16 @@ export const Route = createFileRoute("/api/chat")({
           buildGroundingBlock(sources),
         ].join("\n");
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
+        const model = createTutorModel(aiConfig);
 
         try {
           const result = streamText({
-            model: gateway(TUTOR_MODEL),
+            model,
             system,
             messages: await convertToModelMessages(messages),
-            providerOptions: { lovable: { reasoning_effort: "none" } },
+            ...(aiConfig.kind === "lovable"
+              ? { providerOptions: { lovable: { reasoning_effort: "none" } } }
+              : {}),
           });
 
           return result.toUIMessageStreamResponse({

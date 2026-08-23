@@ -67,3 +67,21 @@ npm run dev
 ```
 
 The dev server runs at `http://localhost:8080`.
+
+## Deploying outside Lovable (Vercel, Netlify, etc.)
+
+Lovable hosting injects the AI and database credentials automatically. Any other host
+needs them set manually, otherwise the tutor replies with
+"AI is not configured on this deployment".
+
+Set these environment variables in your host's project settings and redeploy:
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | AI model access (used automatically when `LOVABLE_API_KEY` is absent) |
+| `AI_MODEL` | Optional model override (defaults to `gpt-4o-mini` on OpenAI) |
+| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Open textbook library database URL |
+| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | Public (anon) database key |
+
+If the database variables are missing, the app still runs — answers are simply not
+grounded in the open library and the library page shows no passages.

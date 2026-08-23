@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { getSupabaseServerEnv } from "./env.server";
 
 export type SourceDoc = {
   id: string;
@@ -20,8 +21,9 @@ const STOPWORDS = new Set([
 ]);
 
 function serverSupabase() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  const url = process.env["SUPABASE_URL"]!;
+  const env = getSupabaseServerEnv();
+  if (!env) return null;
+  const { url, key } = env;
   return createClient<Database>(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     global: {
@@ -48,6 +50,7 @@ export async function retrieveSources(question: string, limit = 4): Promise<Sour
 
   const columns = "id, subject, topic, title, body, source_name, source_url, license";
   const supabase = serverSupabase();
+  if (!supabase) return [];
 
   if (terms.length > 0) {
     const { data, error } = await supabase
