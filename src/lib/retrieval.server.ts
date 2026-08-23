@@ -20,8 +20,9 @@ const STOPWORDS = new Set([
 ]);
 
 function serverSupabase() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  const url = process.env["SUPABASE_URL"]!;
+  const env = getSupabaseServerEnv();
+  if (!env) return null;
+  const { url, key } = env;
   return createClient<Database>(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     global: {
