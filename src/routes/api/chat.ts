@@ -77,14 +77,16 @@ export const Route = createFileRoute("/api/chat")({
           buildGroundingBlock(sources),
         ].join("\n");
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
+        const model = createTutorModel(aiConfig);
 
         try {
           const result = streamText({
-            model: gateway(TUTOR_MODEL),
+            model,
             system,
             messages: await convertToModelMessages(messages),
-            providerOptions: { lovable: { reasoning_effort: "none" } },
+            ...(aiConfig.kind === "lovable"
+              ? { providerOptions: { lovable: { reasoning_effort: "none" } } }
+              : {}),
           });
 
           return result.toUIMessageStreamResponse({
