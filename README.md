@@ -78,10 +78,14 @@ Set these environment variables in your host's project settings and redeploy:
 
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | AI model access (used automatically when `LOVABLE_API_KEY` is absent) |
-| `AI_MODEL` | Optional model override (defaults to `gpt-4o-mini` on OpenAI) |
+| `GEMINI_API_KEY` | Google AI Studio key (https://aistudio.google.com/apikey). Used automatically when `LOVABLE_API_KEY` is absent |
+| `OPENAI_API_KEY` | Alternative AI provider, used if no Gemini key is set |
+| `AI_MODEL` | Optional model override (defaults to `gemini-2.5-flash` on Gemini, `gpt-4o-mini` on OpenAI) |
 | `SUPABASE_URL` / `VITE_SUPABASE_URL` | Open textbook library database URL |
 | `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | Public (anon) database key |
 
+Provider priority: `LOVABLE_API_KEY` → `GEMINI_API_KEY` → `OPENAI_API_KEY`.
+
 If the database variables are missing, the app still runs — answers are simply not
 grounded in the open library and the library page shows no passages.
+
