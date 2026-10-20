@@ -1,16 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import logoMark from "@/assets/logo-aarambh.png";
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-6 px-5">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sparkles className="size-4" />
-          </span>
+        <Link to="/" className="flex items-center gap-2.5">
+          <img
+            src={logoMark}
+            alt=""
+            width={30}
+            height={30}
+            className="size-[30px] shrink-0 object-contain"
+          />
           <span className="font-display text-lg font-semibold tracking-tight">Aarambh</span>
         </Link>
 
